@@ -16,7 +16,7 @@ Docker 1.9+ is required to run tests. See https://docs.docker.com/engine/install
 
 Setting up tests requirements (assuming you're within virtualenv on ubuntu 14.04+)::
 
-    sudo apt-get install -y libsnappy-dev && pip install flake8 nose python-snappy coveralls .
+    sudo apt-get install -y libsnappy-dev && pip install flake8 pytest pytest-cov docker-py python-snappy coveralls .
 
 Running tests::
 

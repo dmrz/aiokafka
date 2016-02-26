@@ -12,7 +12,7 @@ from kafka.common import OffsetRequest
 from aiokafka.client import connect
 
 
-__all__ = ['get_open_port', 'KafkaIntegrationTestCase', 'random_string']
+__all__ = ['KafkaIntegrationTestCase', 'random_string']
 
 
 def run_until_complete(fun):
@@ -87,14 +87,6 @@ class KafkaIntegrationTestCase(BaseTest):
 
     def key(self, k):
         return k.encode('utf-8')
-
-
-def get_open_port():
-    sock = socket.socket()
-    sock.bind(("", 0))
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
 
 
 def random_string(length):
