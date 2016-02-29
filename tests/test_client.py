@@ -1,4 +1,5 @@
 import asyncio
+import pytest
 import unittest
 from unittest import mock
 from kafka.common import (KafkaUnavailableError, BrokerMetadata, TopicMetadata,
@@ -12,7 +13,7 @@ from kafka.common import (KafkaUnavailableError, BrokerMetadata, TopicMetadata,
 from kafka.protocol import create_message
 
 from aiokafka.client import AIOKafkaClient, connect
-from ._testutil import KafkaIntegrationTestCase, run_until_complete
+from ._testutil import BaseTest, KafkaIntegrationTestCase, run_until_complete
 
 
 NO_ERROR = 0
@@ -21,14 +22,8 @@ NO_LEADER = 5
 REPLICA_NOT_AVAILABLE = 9
 
 
+@pytest.mark.usefixtures('setup_test_class')
 class TestAIOKafkaClient(unittest.TestCase):
-
-    def setUp(self):
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
 
     def test_init_with_list(self):
         client = AIOKafkaClient(

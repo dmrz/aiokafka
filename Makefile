@@ -9,13 +9,13 @@ flake:
 	flake8 aiokafka tests
 
 test: flake
-	@DOCKER_IMAGE_NAME=$(DOCKER_IMAGE_NAME) FLAGS=$(FLAGS) sh runtests.sh
+	@py.test -s --no-print-logs tests
 
 vtest: flake
-	@DOCKER_IMAGE_NAME=$(DOCKER_IMAGE_NAME) FLAGS="-v $(FLAGS)" sh runtests.sh
+	@py.test -s -v --no-print-logs tests
 
 cov cover coverage:
-	@DOCKER_IMAGE_NAME=$(DOCKER_IMAGE_NAME) FLAGS="--cov aiokafka --cov-report html $(FLAGS)" sh runtests.sh
+	@py.test -s --no-print-logs --cov aiokafka --cov-report html tests || true
 	@echo "open file://`pwd`/htmlcov/index.html"
 
 clean:
@@ -32,7 +32,6 @@ clean:
 	rm -rf build
 	rm -rf cover
 	rm -rf dist
-	@docker rmi -f $(DOCKER_IMAGE_NAME) || true
 
 doc:
 	make -C docs html

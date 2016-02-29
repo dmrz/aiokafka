@@ -3,11 +3,13 @@ import os
 import socket
 import string
 import random
+import time
 import unittest
 import uuid
+import pytest
 
 from functools import wraps
-from kafka.common import OffsetRequest
+from kafka.common import OffsetRequest, KafkaUnavailableError
 
 from aiokafka.client import connect
 
@@ -28,22 +30,14 @@ def run_until_complete(fun):
     return wrapper
 
 
+@pytest.mark.usefixtures('setup_test_class', 'kafka_server')
 class BaseTest(unittest.TestCase):
     """Base test case for unittests.
     """
 
-    kafka_host = os.environ.get('KAFKA_HOST')
-    kafka_port = os.environ.get('KAFKA_PORT')
-
-    def setUp(self):
-        assert all([self.kafka_host, self.kafka_port]),\
-            'Required env variables are not provided'
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(None)
-
-    def tearDown(self):
-        self.loop.close()
-        del self.loop
+    @pytest.fixture(autouse=True)
+    def setup_kafka_host_and_port(self, kafka_server):
+        self.kafka_host, self.kafka_port = kafka_server
 
 
 class KafkaIntegrationTestCase(BaseTest):
@@ -53,8 +47,13 @@ class KafkaIntegrationTestCase(BaseTest):
     def setUp(self):
         super().setUp()
         self.hosts = ['{}:{}'.format(self.kafka_host, self.kafka_port)]
-        self.client = self.loop.run_until_complete(
-            connect(self.hosts, loop=self.loop))
+        for i in range(100):
+            try:
+                self.client = self.loop.run_until_complete(
+                    connect(self.hosts, loop=self.loop))
+                break
+            except KafkaUnavailableError:
+                time.sleep(0.1)
 
         if not self.topic:
             topic = "%s-%s" % (self.id()[self.id().rindex(".") + 1:],
