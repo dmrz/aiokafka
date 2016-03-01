@@ -15,7 +15,7 @@ vtest: flake
 	@py.test -s -v --no-print-logs --scala-version $(SCALA_VERSION) --kafka-version $(KAFKA_VERSION) --docker-image-name $(DOCKER_IMAGE_NAME) $(FLAGS) tests
 
 cov cover coverage:
-	@py.test -s --no-print-logs --cov aiokafka --cov-report html --scala-version $(SCALA_VERSION) --kafka-version $(KAFKA_VERSION) --docker-image-name $(DOCKER_IMAGE_NAME) $(FLAGS) tests || true
+	@py.test -s --no-print-logs --cov aiokafka --cov-report html --scala-version $(SCALA_VERSION) --kafka-version $(KAFKA_VERSION) --docker-image-name $(DOCKER_IMAGE_NAME) $(FLAGS) tests
 	@echo "open file://`pwd`/htmlcov/index.html"
 
 clean:
