@@ -13,7 +13,7 @@ from kafka.common import (KafkaUnavailableError, BrokerMetadata, TopicMetadata,
 from kafka.protocol import create_message
 
 from aiokafka.client import AIOKafkaClient, connect
-from ._testutil import BaseTest, KafkaIntegrationTestCase, run_until_complete
+from ._testutil import KafkaIntegrationTestCase, run_until_complete
 
 
 NO_ERROR = 0

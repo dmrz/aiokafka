@@ -1,6 +1,4 @@
 import asyncio
-import os
-import socket
 import string
 import random
 import time
@@ -47,7 +45,7 @@ class KafkaIntegrationTestCase(BaseTest):
     def setUp(self):
         super().setUp()
         self.hosts = ['{}:{}'.format(self.kafka_host, self.kafka_port)]
-        for i in range(100):
+        for i in range(500):
             try:
                 self.client = self.loop.run_until_complete(
                     connect(self.hosts, loop=self.loop))

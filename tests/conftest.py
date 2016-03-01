@@ -1,23 +1,42 @@
 import asyncio
 import fcntl
 import gc
-import docker
+import docker as libdocker
 import pytest
 import socket
 import struct
 import uuid
 
 
-def get_ip_address(ifname):
-    """
-    Returns IP address of the given interface name.
-    """
+def pytest_addoption(parser):
+    parser.addoption('--docker-image-name',
+                     action='store',
+                     default='pygo/kafka',
+                     help='Kafka docker image name')
+    parser.addoption('--kafka-version',
+                     action='store',
+                     default='0.9.0.1',
+                     help='Kafka version')
+    parser.addoption('--scala-version',
+                     action='store',
+                     default='2.11',
+                     help='Scala version')
+
+
+@pytest.fixture(scope='session')
+def docker():
+    return libdocker.Client(version='auto')
+
+
+@pytest.fixture(scope='session')
+def docker_ip_address(docker):
+    """Returns IP address of the docker daemon service."""
+    ifname = docker.networks()[0]['Options']['com.docker.network.bridge.name']
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
         0x8915,  # SIOCGIFADDR
-        struct.pack('256s', ifname[:15].encode('utf-8'))
-    )[20:24])
+        struct.pack('256s', ifname[:15].encode('utf-8')))[20:24])
 
 
 @pytest.fixture(scope='session')
@@ -35,14 +54,16 @@ def session_id():
 
 
 @pytest.yield_fixture(scope='session')
-def kafka_server(unused_port, session_id):
-    image_name = 'pygo/kafka:2.11_0.9.0.1'
-    docker_client = docker.Client(version='auto')
-    docker_client.pull(image_name)
-    kafka_host = get_ip_address('docker0')
+def kafka_server(request, docker, docker_ip_address, unused_port, session_id):
+    image_name = request.config.getoption('--docker-image-name')
+    skala_version = request.config.getoption('--scala-version')
+    kafka_version = request.config.getoption('--kafka-version')
+    image_tag = '{}:{}_{}'.format(image_name, skala_version, kafka_version)
+    docker.pull(image_tag)
+    kafka_host = docker_ip_address
     kafka_port = unused_port()
-    container = docker_client.create_container(
-        image=image_name,
+    container = docker.create_container(
+        image=image_tag,
         name='aiokafka-tests-{}'.format(session_id),
         ports=[2181, 9092],
         environment={
@@ -50,15 +71,15 @@ def kafka_server(unused_port, session_id):
             'ADVERTISED_PORT': kafka_port,
             'NUM_PARTITIONS': 2
         },
-        host_config=docker_client.create_host_config(
+        host_config=docker.create_host_config(
             port_bindings={
                 2181: (kafka_host, unused_port()),
                 9092: (kafka_host, kafka_port)
             }))
-    docker_client.start(container=container['Id'])
+    docker.start(container=container['Id'])
     yield kafka_host, kafka_port
-    docker_client.kill(container=container['Id'])
-    docker_client.remove_container(container['Id'])
+    docker.kill(container=container['Id'])
+    docker.remove_container(container['Id'])
 
 
 @pytest.yield_fixture(scope='class')
