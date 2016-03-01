@@ -31,12 +31,17 @@ def docker():
 @pytest.fixture(scope='session')
 def docker_ip_address(docker):
     """Returns IP address of the docker daemon service."""
+    # Fallback docker daemon bridge name
+    ifname = 'docker0'
     try:
-        ifname = docker.networks()[0]['Options'][
-            'com.docker.network.bridge.name']
+        for network in docker.networks():
+            _ifname = docker.networks()[0]['Options'].get(
+                'com.docker.network.bridge.name')
+            if _ifname is not None:
+                ifname = _ifname
+                break
     except libdocker.errors.InvalidVersion:
-        # Fallback for older docker versions
-        ifname = 'docker0'
+        pass
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     return socket.inet_ntoa(fcntl.ioctl(
         s.fileno(),
